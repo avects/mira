@@ -1,13 +1,16 @@
-const { EmbedBuilder } = require('discord.js');
+const { isOwner } = require('./common');
+const embeds = require('../../constants/embeds');
 
 module.exports = {
     id: 'vm_increase',
-    execute: async (interaction, userChannel) => {
-        const increased = userChannel.userLimit + 1;
-        await userChannel.setUserLimit(increased);
-        await interaction.reply({
-            embeds: [new EmbedBuilder().setColor('#7ab158').setDescription(`➕ User limit increased to ${increased}.`)],
-            ephemeral: true,
-        });
-    },
+    async execute(interaction) {
+        const channel = interaction.member.voice?.channel;
+        if (!channel || !isOwner(channel.id, interaction.user.id)) {
+            return interaction.reply({ embeds: [embeds.error('You do not own this channel.')], ephemeral: true });
+        }
+
+        const newLimit = (channel.userLimit || 0) + 1;
+        await channel.setUserLimit(newLimit);
+        return interaction.reply({ embeds: [embeds.success(`User limit increased to ${newLimit}.`)], ephemeral: true });
+    }
 };

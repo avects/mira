@@ -1,20 +1,20 @@
-const { EmbedBuilder } = require('discord.js');
+const { isOwner } = require('./common');
+const embeds = require('../../constants/embeds');
 
 module.exports = {
     id: 'vm_decrease',
-    execute: async (interaction, userChannel) => {
-        if (userChannel.userLimit > 0) {
-            const decreased = userChannel.userLimit - 1;
-            await userChannel.setUserLimit(decreased);
-            await interaction.reply({
-                embeds: [new EmbedBuilder().setColor('#dca60d').setDescription(`➖ User limit decreased to ${decreased}.`)],
-                ephemeral: true,
-            });
-        } else {
-            await interaction.reply({
-                embeds: [new EmbedBuilder().setColor('#a82d43').setDescription(`❌ User limit is already unlimited.`)],
-                ephemeral: true,
-            });
+    async execute(interaction) {
+        const channel = interaction.member.voice?.channel;
+        if (!channel || !isOwner(channel.id, interaction.user.id)) {
+            return interaction.reply({ embeds: [embeds.error('You do not own this channel.')], ephemeral: true });
         }
-    },
+
+        if (channel.userLimit === 0) {
+            return interaction.reply({ embeds: [embeds.error('User limit is already unlimited.')], ephemeral: true });
+        }
+
+        const newLimit = channel.userLimit - 1;
+        await channel.setUserLimit(newLimit);
+        return interaction.reply({ embeds: [embeds.success(`User limit decreased to ${newLimit}.`)], ephemeral: true });
+    }
 };

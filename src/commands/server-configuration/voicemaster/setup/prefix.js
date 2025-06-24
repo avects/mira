@@ -1,5 +1,4 @@
 const {
-    SlashCommandBuilder,
     ChannelType,
     PermissionFlagsBits,
     EmbedBuilder,
@@ -9,44 +8,43 @@ const {
 } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const embeds = require('../../../../constants/embeds');
 
-const configPath = path.join(__dirname, 'data', 'config.json');
-const activeRoomsPath = path.join(__dirname, 'data', 'activeRooms.json');
+const configPath = path.join(__dirname, '..', 'data', 'config.json');
+const activeRoomsPath = path.join(__dirname, '..', 'data', 'activeRooms.json');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('voicemaster')
-        .setDescription('Setup your VoiceMaster system')
-        .addSubcommand(sub =>
-            sub.setName('setup')
-                .setDescription('Create VoiceMaster category and panel')
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    name: 'voicemaster',
+    aliases: [],
+    permissions: [PermissionFlagsBits.Administrator],
+    async execute(message, args) {
+        if (!args[0] || args[0].toLowerCase() !== 'setup') {
+            return message.reply({ embeds: [embeds.info('Usage: `voicemaster setup`')] });
+        }
 
-    async execute(interaction) {
-        const { guild } = interaction;
+        const { guild } = message;
 
-        // Crear categoría
+        if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+            return message.reply({ embeds: [embeds.error('You need Administrator permissions to use this command.')] });
+        }
+
         const category = await guild.channels.create({
-            name: 'VoiceMaster',
+            name: '📞 voice channels',
             type: ChannelType.GuildCategory,
         });
 
-        // Canal generador
         const generatorChannel = await guild.channels.create({
-            name: '➕ Create Room',
+            name: 'create',
             type: ChannelType.GuildVoice,
             parent: category.id,
         });
 
-        // Canal de panel
         const panelChannel = await guild.channels.create({
-            name: '🔧・channel-panel',
+            name: 'panel',
             type: ChannelType.GuildText,
             parent: category.id,
         });
 
-        // Embed del panel
         const panelEmbed = new EmbedBuilder()
             .setTitle('🎛️ VoiceMaster Interface')
             .setDescription(`Use the buttons below to control your voice channel.\n\n**Button Usage**\n` +
@@ -59,8 +57,7 @@ module.exports = {
                 `🎮 — **Start** an activity\n` +
                 `ℹ️ — **View** channel information\n` +
                 `➕ — **Increase** the user limit\n` +
-                `➖ — **Decrease** the user limit`
-            )
+                `➖ — **Decrease** the user limit`)
             .setColor('#5865F2')
             .setFooter({ text: 'VoiceMaster by Mira' });
 
@@ -82,7 +79,6 @@ module.exports = {
 
         await panelChannel.send({ embeds: [panelEmbed], components: [row1, row2] });
 
-        // Guardar config general
         const configData = fs.existsSync(configPath)
             ? JSON.parse(fs.readFileSync(configPath, 'utf8'))
             : {};
@@ -93,14 +89,10 @@ module.exports = {
         };
         fs.writeFileSync(configPath, JSON.stringify(configData, null, 2));
 
-        // Asegurar existencia del archivo activeRooms.json vacío
         if (!fs.existsSync(activeRoomsPath)) {
             fs.writeFileSync(activeRoomsPath, JSON.stringify({}, null, 2));
         }
 
-        await interaction.reply({
-            content: '✅ VoiceMaster setup completed!',
-            ephemeral: true,
-        });
-    }
+        return message.reply({ embeds: [embeds.success('VoiceMaster setup completed!')] });
+    },
 };

@@ -1,21 +1,29 @@
-const { EmbedBuilder } = require('discord.js');
+const { isOwner } = require('./common');
+const embeds = require('../../constants/embeds');
 const moment = require('moment');
 
 module.exports = {
     id: 'vm_info',
-    execute: async (interaction, userChannel, room) => {
-        const embed = new EmbedBuilder()
-            .setColor('#3c3b40')
-            .setAuthor({ name: interaction.member.displayName, iconURL: interaction.user.displayAvatarURL() })
-            .setTitle(userChannel.name)
-            .setDescription(`**Owner:** <@${room.ownerId}> (\`${room.ownerId}\`)`)
-            .addFields(
-                { name: 'Locked:', value: userChannel.permissionOverwrites.cache.get(interaction.guild.roles.everyone.id)?.deny.has('Connect') ? '❌' : '✅', inline: true },
-                { name: 'Created:', value: `<t:${Math.floor(room.createdAt / 1000)}:R>`, inline: true },
-                { name: 'Bitrate:', value: `${userChannel.bitrate}kbps`, inline: true },
-                { name: 'Connected:', value: `${userChannel.members.size}`, inline: true }
-            );
+    async execute(interaction) {
+        const channel = interaction.member.voice?.channel;
+        if (!channel || !isOwner(channel.id, interaction.user.id)) {
+            return interaction.reply({ embeds: [embeds.error('You do not own this channel.')], ephemeral: true });
+        }
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
-    },
+        const owner = `<@${interaction.user.id}>`;
+        const locked = channel.permissionOverwrites.cache.get(interaction.guild.roles.everyone.id)?.deny.has('Connect') ? 'Yes' : 'No';
+        const hidden = channel.permissionOverwrites.cache.get(interaction.guild.roles.everyone.id)?.deny.has('ViewChannel') ? 'Yes' : 'No';
+
+        const embed = embeds.info(
+            `**Channel Name:** ${channel.name}\n` +
+            `**Owner:** ${owner}\n` +
+            `**Locked:** ${locked}\n` +
+            `**Hidden:** ${hidden}\n` +
+            `**Bitrate:** ${channel.bitrate / 1000} kbps\n` +
+            `**Users:** ${channel.members.size}/${channel.userLimit || '∞'}\n` +
+            `**Created:** <t:${Math.floor(channel.createdTimestamp / 1000)}:R>`
+        );
+
+        return interaction.reply({ embeds: [embed], ephemeral: true });
+    }
 };
