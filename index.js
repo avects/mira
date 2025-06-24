@@ -7,7 +7,7 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildVoiceStates, // NECESARIO para VoiceMaster
     ],
 });
 
@@ -18,5 +18,6 @@ require('./src/core/CommandHandler')(client);
 require('./src/events/ready.js')(client);
 require('./src/events/interactionCreate.js')(client);
 require('./src/events/messageCreate.js')(client);
+require('./src/events/voiceStateUpdate.js')(client); // ✅ AGREGA ESTO
 
 client.login(process.env.DISCORD_TOKEN);
