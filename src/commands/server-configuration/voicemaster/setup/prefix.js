@@ -1,17 +1,17 @@
 const {
     ChannelType,
-    PermissionFlagsBits,
     EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
+    PermissionFlagsBits
 } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const embeds = require('../../../../constants/embeds');
 
 const configPath = path.join(__dirname, '..', 'data', 'config.json');
 const activeRoomsPath = path.join(__dirname, '..', 'data', 'activeRooms.json');
+const vmLogoPath = 'attachment://vm-logo.png';
 
 module.exports = {
     name: 'voicemaster',
@@ -19,14 +19,15 @@ module.exports = {
     permissions: [PermissionFlagsBits.Administrator],
     async execute(message, args) {
         if (!args[0] || args[0].toLowerCase() !== 'setup') {
-            return message.reply({ embeds: [embeds.info('Usage: `voicemaster setup`')] });
+            return message.reply({
+                embeds: [{
+                    color: 0xa82d43,
+                    description: '❌ Usage: `voicemaster setup`'
+                }]
+            });
         }
 
         const { guild } = message;
-
-        if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return message.reply({ embeds: [embeds.error('You need Administrator permissions to use this command.')] });
-        }
 
         const category = await guild.channels.create({
             name: '📞 voice channels',
@@ -46,38 +47,45 @@ module.exports = {
         });
 
         const panelEmbed = new EmbedBuilder()
-            .setTitle('🎛️ VoiceMaster Interface')
-            .setDescription(`Use the buttons below to control your voice channel.\n\n**Button Usage**\n` +
-                `🔒 — **Lock** the voice channel\n` +
-                `🔓 — **Unlock** the voice channel\n` +
-                `👻 — **Ghost** the voice channel\n` +
-                `🌐 — **Reveal** the voice channel\n` +
-                `🎙️ — **Claim** the voice channel\n` +
-                `⛔ — **Disconnect** a member\n` +
-                `🎮 — **Start** an activity\n` +
-                `ℹ️ — **View** channel information\n` +
-                `➕ — **Increase** the user limit\n` +
-                `➖ — **Decrease** the user limit`)
-            .setColor('#5865F2')
+            .setAuthor({ name: 'VoiceMaster Interface', iconURL: guild.iconURL() })
+            .setDescription(
+                `Use the buttons below to control your voice channel.\n\n**Button Usage**\n` +
+                `<:_:1387080783063289880> — \`Lock\` your channel\n` +
+                `<:_:1387080808405401691> — \`Unlock\` your channel\n` +
+                `<:_:1387080834502099058> — \`Ghost\` your channel\n` +
+                `<:_:1387080851099095261> — \`Reveal\` your channel\n` +
+                `<:_:1387080877900693676> — \`Claim\` your channel\n` +
+                `<:_:1387080900096954398> — \`Disconnect\` someone\n` +
+                `<:_:1387080931403370696> — \`Start\` an activity\n` +
+                `<:_:1387080952190074993> — \`Info\` about your channel\n` +
+                `<:_:1387080984616501329> — \`Increase\` user limit\n` +
+                `<:_:1387080964819128431> — \`Decrease\` user limit`
+            )
+            .setColor('#3c3b40')
+            .setThumbnail(vmLogoPath)
             .setFooter({ text: 'VoiceMaster by Mira' });
 
         const row1 = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('vm_lock').setEmoji('🔒').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('vm_unlock').setEmoji('🔓').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('vm_ghost').setEmoji('👻').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('vm_reveal').setEmoji('🌐').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('vm_claim').setEmoji('🎙️').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('vm_lock').setEmoji('1387080783063289880').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('vm_unlock').setEmoji('1387080808405401691').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('vm_ghost').setEmoji('1387080834502099058').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('vm_reveal').setEmoji('1387080851099095261').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('vm_claim').setEmoji('1387080877900693676').setStyle(ButtonStyle.Secondary),
         );
 
         const row2 = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('vm_disconnect').setEmoji('⛔').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('vm_activity').setEmoji('🎮').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('vm_info').setEmoji('ℹ️').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('vm_increase').setEmoji('➕').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('vm_decrease').setEmoji('➖').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('vm_disconnect').setEmoji('1387080900096954398').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('vm_activity').setEmoji('1387080931403370696').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('vm_info').setEmoji('1387080952190074993').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('vm_increase').setEmoji('1387080984616501329').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('vm_decrease').setEmoji('1387080964819128431').setStyle(ButtonStyle.Secondary),
         );
 
-        await panelChannel.send({ embeds: [panelEmbed], components: [row1, row2] });
+        await panelChannel.send({
+            embeds: [panelEmbed],
+            components: [row1, row2],
+            files: [path.join(__dirname, '..', 'assets', 'vm-logo.png')],
+        });
 
         const configData = fs.existsSync(configPath)
             ? JSON.parse(fs.readFileSync(configPath, 'utf8'))
@@ -93,6 +101,11 @@ module.exports = {
             fs.writeFileSync(activeRoomsPath, JSON.stringify({}, null, 2));
         }
 
-        return message.reply({ embeds: [embeds.success('VoiceMaster setup completed!')] });
-    },
+        message.reply({
+            embeds: [{
+                color: 0x7ab158,
+                description: '✅ VoiceMaster setup completed!',
+            }]
+        });
+    }
 };
